@@ -7,10 +7,28 @@ output:
 
 ## Setup
 
-```{r setup}
+
+```r
 knitr::opts_chunk$set(echo = TRUE)
 
 library(dplyr)
+```
+
+```
+## 
+## Attaching package: 'dplyr'
+```
+
+```
+## The following objects are masked from 'package:stats':
+## 
+##     filter, lag
+```
+
+```
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
 ```
 
 
@@ -19,10 +37,9 @@ library(dplyr)
 
 Here we load the activity data.
 
-``` {r loadData}
 
+```r
 data <- read.csv(unz("activity.zip","activity.csv"))
-
 ```
 
 
@@ -30,63 +47,65 @@ data <- read.csv(unz("activity.zip","activity.csv"))
 
 Here we compute a data frame with the total steps per day. For any interval with unavailable data, we will assume 0 steps here. 
 
-``` {r perday}
+
+```r
 daySteps <- data %>% group_by(date) %>% summarize(steps = sum(steps,na.rm = TRUE))
 ```
 
 Here we give some results for the total steps per day - a histogram and the mean and median steps per day
 
-``` {r totalSteps}
 
+```r
 hist(daySteps$steps,main="Total Steps per Day Histogram",xlab="Total Steps")
-
 ```
+
+![](PA1_template_files/figure-html/totalSteps-1.png)<!-- -->
 Here we look at the mean and median for the total steps each day.
 
-``` {r}
 
+```r
 meanStepsPerDay <- mean(daySteps$steps)
 medianStepsPerDay <- median(daySteps$steps)
-
 ```
 
-__Mean Steps per Day:__ `r meanStepsPerDay`
+__Mean Steps per Day:__ 9354.2295082
 
-__Median Steps per Day:__ `r medianStepsPerDay`
+__Median Steps per Day:__ 10395
 
 ## What is the average daily activity pattern?
 
 
 Here we compute a data frame with the total steps grouped by interval in the day. For intervals with missing data, 0 sets is assumed here.
 
-``` {r perinterval}
+
+```r
 intervalSteps <- data %>% group_by(interval) %>% summarize(ave = mean(steps,na.rm = TRUE))
 ```
 
 We make a time series plot of the average number of steps for each interval.
 
-``` {r} 
 
+```r
 plot(intervalSteps$interval,intervalSteps$ave,type="l")
-
 ```
 
-``` {r}
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
 
+
+```r
 maxAveInterval = intervalSteps$interval[which.max(intervalSteps$ave)]
-
 ```
 
 __Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?__
 
-__Interval with largest average:__ `r maxAveInterval`
+__Interval with largest average:__ 835
 
 ## Imputing missing values
 
 We want to examine the missing values.
 
-``` {r}
 
+```r
 totalMissing <- sum(is.na(data$steps))
 totalNotMissing <- sum(!is.na(data$steps))
 
@@ -94,21 +113,20 @@ totalNotMissing <- sum(!is.na(data$steps))
 missingByDay <- data %>% group_by(date) %>% summarize(missing = sum(is.na(steps)), notmissing = sum(!is.na(steps)))
 
 uniqueDayNonMissing <- unique(missingByDay$notmissing)
-
 ```
 
-__Total Missing Values:__ `r totalMissing`
+__Total Missing Values:__ 2304
 
-__Total Values _not_ Missing:__ `r totalNotMissing`
+__Total Values _not_ Missing:__ 15264
 
-__Number of Non-missing values per Day, unique values:__ `r uniqueDayNonMissing`
+__Number of Non-missing values per Day, unique values:__ 0, 288
 
 From the last value above, we see that days are either fully populated or not populated at all.
 
 To impute values, we will replace an interval with the mean number of steps in that interval taken over all days.
 
-``` {r imputeValues}
 
+```r
 # we will create a vector of average steps per interval to align with the rows
 # of the data vector.
 intervalAveSteps <- rep(intervalSteps$ave,61)
@@ -125,8 +143,6 @@ missingData <- is.na(data$steps)
 imputedData <- data
 
 imputedData$steps[missingData] <- intervalAveSteps[missingData]
-
-
 ```
 
 ### Repeat of total steps per day analysis with imputed data
@@ -134,31 +150,30 @@ imputedData$steps[missingData] <- intervalAveSteps[missingData]
 We will now repeat our analysis above with the imputed data for total steps per day.
 
 
-``` {r imputedperday}
 
+```r
 imputedDaySteps <- imputedData %>% group_by(date) %>% summarize(steps = sum(steps))
-
 ```
 
 Here we give some results for the total steps per day - a histogram and the mean and median steps per day
 
-``` {r imputedtotalSteps}
 
+```r
 hist(imputedDaySteps$steps,main="Total Steps per Day Histogram",xlab="Total Steps")
-
 ```
+
+![](PA1_template_files/figure-html/imputedtotalSteps-1.png)<!-- -->
 Here we look at the mean and median for the total steps each day.
 
-``` {r}
 
+```r
 imputedMeanStepsPerDay <- mean(imputedDaySteps$steps)
 imputedMedianStepsPerDay <- median(imputedDaySteps$steps)
-
 ```
 
-__Mean Steps per Day:__ `r imputedMeanStepsPerDay`
+__Mean Steps per Day:__ 1.0766189\times 10^{4}
 
-__Median Steps per Day:__ `r imputedMedianStepsPerDay`
+__Median Steps per Day:__ 1.0766189\times 10^{4}
 
 This might look suspicious at first glance that the mean and median are the same,
 but we added a number of days containing exactly the mean number of steps. The 
@@ -183,8 +198,8 @@ The total number of steps per day is higher.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-``` {r} 
 
+```r
 modData <- imputedData
 
 modData$date <- as.Date(modData$date,"%Y-%m-%d")
@@ -195,31 +210,37 @@ dayTypeChar <- rep("weekday",length(modData$date))
 dayTypeChar[isWeekend] = "weekend"
 
 modData$daytype <- factor(dayTypeChar)
-
 ```
 
-``` {r}
 
+```r
 modIntervalSteps <- modData %>% group_by(interval,daytype) %>% summarize(ave = mean(steps,na.rm = TRUE))
+```
 
+```
+## `summarise()` has grouped output by 'interval'. You can override using the
+## `.groups` argument.
 ```
 
 We make a time series plot of the average number of steps for each interval.
 
-``` {r}
+
+```r
 library(ggplot2)
 
 ggplot(modIntervalSteps,aes(interval,ave)) + geom_line() + facet_grid(daytype ~ .)
-
 ```
 
-``` {r} 
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
+
+```r
 weekdayIntervals <- filter(modIntervalSteps,daytype == "weekday")
 weekendIntervals <- filter(modIntervalSteps,daytype == "weekend")
 
 plot(weekdayIntervals$interval,weekdayIntervals$ave,type="l",col="blue",lwd=2)
 lines(weekendIntervals$interval,weekendIntervals$ave,type="l",col="red",lwd=2)
 legend("topright",legend=c("weekday","weekend"),col=c("blue","red"),lwd=2)
-
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
