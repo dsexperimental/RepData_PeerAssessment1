@@ -5,19 +5,21 @@ output:
     keep_md: true
 ---
 
-## Setup
-
-```{r setup}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 library(dplyr)
+library(ggplot2)
+
 ```
 
 
 
 ## Loading and preprocessing the data
 
-Here we load the activity data.
+
+> 1. Load the data (i.e. read.csv())
+> 1. Process/transform the data (if necessary) into a format suitable for your analysis
 
 ``` {r loadData}
 
@@ -28,20 +30,23 @@ data <- read.csv(unz("activity.zip","activity.csv"))
 
 ## What is mean total number of steps taken per day?
 
-Here we compute a data frame with the total steps per day. For any interval with unavailable data, we will assume 0 steps here. 
+> For this part of the assignment, you can ignore the missing values in the dataset.
+> 
+> 1. Calculate the total number of steps taken per day
 
 ``` {r perday}
 daySteps <- data %>% group_by(date) %>% summarize(steps = sum(steps,na.rm = TRUE))
 ```
 
-Here we give some results for the total steps per day - a histogram and the mean and median steps per day
+> 2. Make a histogram of the total number of steps taken each day
 
 ``` {r totalSteps}
 
 hist(daySteps$steps,main="Total Steps per Day Histogram",xlab="Total Steps")
 
 ```
-Here we look at the mean and median for the total steps each day.
+
+> 3. Calculate and report the mean and median of the total number of steps taken per day
 
 ``` {r}
 
@@ -56,20 +61,20 @@ __Median Steps per Day:__ `r medianStepsPerDay`
 
 ## What is the average daily activity pattern?
 
+> 1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
-Here we compute a data frame with the total steps grouped by interval in the day. For intervals with missing data, 0 sets is assumed here.
+_Note on interval value: The interval is in the format %h%m. It was loaded into the data frame as an integer but it is not ordered consecutively. For example it jumps from 155 to 200 to represent the 1:55 and then 2:00 intervals, which is a change of 5 minutes, not 45. This affects the spacing of the interval plot. I am however leaving it in this format rather than converting to a properly ordered value._ 
+
 
 ``` {r perinterval}
+
 intervalSteps <- data %>% group_by(interval) %>% summarize(ave = mean(steps,na.rm = TRUE))
-```
-
-We make a time series plot of the average number of steps for each interval.
-
-``` {r} 
 
 plot(intervalSteps$interval,intervalSteps$ave,type="l")
 
 ```
+
+> 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 
 ``` {r}
 
@@ -77,13 +82,13 @@ maxAveInterval = intervalSteps$interval[which.max(intervalSteps$ave)]
 
 ```
 
-__Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?__
-
 __Interval with largest average:__ `r maxAveInterval`
 
 ## Imputing missing values
 
-We want to examine the missing values.
+> Note that there are a number of days/intervals where there are missing values NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
+> 
+> 1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
 
 ``` {r}
 
@@ -99,11 +104,16 @@ uniqueDayNonMissing <- unique(missingByDay$notmissing)
 
 __Total Missing Values:__ `r totalMissing`
 
+I was inteterested in these initial values too.
+
 __Total Values _not_ Missing:__ `r totalNotMissing`
 
 __Number of Non-missing values per Day, unique values:__ `r uniqueDayNonMissing`
 
 From the last value above, we see that days are either fully populated or not populated at all.
+
+> 2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+> 3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
 
 To impute values, we will replace an interval with the mean number of steps in that interval taken over all days.
 
@@ -129,25 +139,19 @@ imputedData$steps[missingData] <- intervalAveSteps[missingData]
 
 ```
 
-### Repeat of total steps per day analysis with imputed data
 
-We will now repeat our analysis above with the imputed data for total steps per day.
-
+> 4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
 ``` {r imputedperday}
 
 imputedDaySteps <- imputedData %>% group_by(date) %>% summarize(steps = sum(steps))
 
-```
-
-Here we give some results for the total steps per day - a histogram and the mean and median steps per day
-
-``` {r imputedtotalSteps}
 
 hist(imputedDaySteps$steps,main="Total Steps per Day Histogram",xlab="Total Steps")
 
 ```
-Here we look at the mean and median for the total steps each day.
+
+Here are the mean and median for the total steps each day.
 
 ``` {r}
 
@@ -166,29 +170,31 @@ median value must have fallen in this range of "fixed" data.
 
 ### Conclusion Regarding Imputed Data
 
-When we treated the missing data as being equivalent to 0 we added several days
-with very little motion. In effect, when we did not impute the data we had
-several days with artificially low motion.
+> Do these values differ from the estimates from the first part of the assignment?
 
-__Do these values differ from the estimates from the first part of the assignment?__
+Yes, the mean and median step counts are higher and the number of values in the bottom bin of the 
+histogram has gotten much smaller.
 
-Adding the imputed data gave a higher values for total steps as well as for the
-mean and median.
+> What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
-__What is the impact of imputing missing data on the estimates of the total daily number of steps?__
-
-The total number of steps per day is higher.
-
+This can be answered many ways. One effect is that several days with anomalously low counts have been
+replaced with more typical numbers.
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+> For this part the weekdays() function may be of some help here. Use the dataset with the filled-in missing values for this part.
+> 
+> 1. Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
 
 ``` {r} 
 
 modData <- imputedData
 
+#convert the data column to the date class
 modData$date <- as.Date(modData$date,"%Y-%m-%d")
 
+#construct the new values and add to the data set
 dayOfWeek <- weekdays(modData$date)
 isWeekend <- (dayOfWeek == "Saturday") | (dayOfWeek == "Sunday")
 dayTypeChar <- rep("weekday",length(modData$date))
@@ -196,30 +202,24 @@ dayTypeChar[isWeekend] = "weekend"
 
 modData$daytype <- factor(dayTypeChar)
 
-```
-
-``` {r}
-
+#create a new data frame with steps and interval,daytype
 modIntervalSteps <- modData %>% group_by(interval,daytype) %>% summarize(ave = mean(steps,na.rm = TRUE))
 
 ```
 
-We make a time series plot of the average number of steps for each interval.
+
+> 2. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
 
 ``` {r}
-library(ggplot2)
 
-ggplot(modIntervalSteps,aes(interval,ave)) + geom_line() + facet_grid(daytype ~ .)
+ggplot(modIntervalSteps,aes(interval,ave)) + geom_line() + facet_grid(daytype ~ .) + labs(title="Steps per Interval by Day Type")
 
 ```
 
-``` {r} 
+I am adding an additional plot to show the two series overlayed. I hope someone doesn't see this and think I did the assignment wrong.
 
-weekdayIntervals <- filter(modIntervalSteps,daytype == "weekday")
-weekendIntervals <- filter(modIntervalSteps,daytype == "weekend")
+``` {r}
 
-plot(weekdayIntervals$interval,weekdayIntervals$ave,type="l",col="blue",lwd=2)
-lines(weekendIntervals$interval,weekendIntervals$ave,type="l",col="red",lwd=2)
-legend("topright",legend=c("weekday","weekend"),col=c("blue","red"),lwd=2)
+ggplot(modIntervalSteps,aes(interval,ave,col=daytype)) + geom_line(size=1) + labs(title="Steps per Interval by Day Type")
 
 ```
